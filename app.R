@@ -2,7 +2,7 @@ library(shiny)
 library(shinyvalidate)
 
 ui <- fluidPage(
-  titlePanel("Mad Libs Game featuring Joe Cheng and Winston Chang"),
+  titlePanel("Mad Libs Game"),
   
   sidebarLayout(
     sidebarPanel(
