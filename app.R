@@ -1,43 +1,8 @@
 library(shiny)
-
-story_templates <- list(
-)
+library(shinyvalidate)
 
 ui <- fluidPage(
   titlePanel("Mad Libs Game featuring Joe Cheng and Winston Chang"),
-  
-  sidebarLayout(
-    sidebarPanel(
-      textInput("noun", "Enter a noun:", ""),
-      textInput("noun2", "Enter another noun:", ""),
-      textInput("verb", "Enter a verb:", ""),
-      textInput("verb2", "Enter another verb:", ""),
-      textInput("adjective", "Enter an adjective:", ""),
-      textInput("adjective2", "Enter another adjective:", ""),
-      textInput("adverb", "Enter an adverb:", ""),
-      actionButton("submit", "Create Story")
-    ),
-    
-    mainPanel(
-      h3("Your Mad Libs Story:"),
-      textOutput("story")
-    )
-  )
-)
-
-generate_story <- function(adjective, verb, adverb, noun, adjective2, noun2, verb2) {
-
-  glue::glue("
-    Once upon a time, Joe Cheng and Winston Chang were working on a
-    {adjective} Shiny app. They decided to {verb} it {adverb} so that everyone 
-    could enjoy using it. One day, Joe suggested they add a {noun} to the app, 
-    which made it even more {adjective2}. Winston agreed and also added 
-    {noun2}. Together, they {verb2} and created the best Shiny app ever!
-  ")
-}
-
-ui <- fluidPage(
-  titlePanel("Mad Libs Game"),
   
   sidebarLayout(
     sidebarPanel(
@@ -58,9 +23,29 @@ ui <- fluidPage(
   )
 )
 
+generate_story <- function(adjective, verb, adverb, noun, adjective2, noun2, verb2) {
+  glue::glue("
+    Once upon a time, Joe Cheng and Winston Chang were working on a
+    {adjective} Shiny app. They decided to {verb} it {adverb} so that everyone 
+    could enjoy using it. One day, Joe suggested they add a {noun} to the app, 
+    which made it even more {adjective2}. Winston agreed and also added 
+    {noun2}. Together, they {verb2} and created the best Shiny app ever!
+  ")
+}
+
 server <- function(input, output) {
-  
+  iv <- InputValidator$new()
+  iv$add_rule("noun", sv_required())
+  iv$add_rule("noun2", sv_required())
+  iv$add_rule("verb", sv_required())
+  iv$add_rule("verb2", sv_required())
+  iv$add_rule("adjective", sv_required())
+  iv$add_rule("adjective2", sv_required())
+  iv$add_rule("adverb", sv_required())
+  iv$enable()
+
   story <- eventReactive(input$submit, {
+    req(iv$is_valid())
     generate_story(    
       noun = input$noun,
       noun2 = input$noun2,
@@ -69,7 +54,7 @@ server <- function(input, output) {
       adjective = input$adjective,
       adjective2 = input$adjective2,
       adverb = input$adverb
-)
+    )
   })
   
   output$story <- renderText({
@@ -78,4 +63,3 @@ server <- function(input, output) {
 }
 
 shinyApp(ui = ui, server = server)
-
