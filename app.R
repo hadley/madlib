@@ -1,8 +1,10 @@
 library(shiny)
 library(shinyvalidate)
+library(duckdb)
 
 ui <- fluidPage(
   titlePanel("Mad Libs Game"),
+  p("Fill in the blanks to create a story! Your results will be saved in my database"),
   
   sidebarLayout(
     sidebarPanel(
@@ -33,6 +35,23 @@ generate_story <- function(adjective, verb, adverb, noun, adjective2, noun2, ver
   ")
 }
 
+add_row_to_db <- function(noun, noun2, verb, verb2, adjective, adjective2, adverb) {
+  con <- DBI::dbConnect(duckdb::duckdb())
+  on.exit(DBI::dbDisconnect(con))
+  
+  DBI::dbExecute(con, "ATTACH 'md:'")
+  DBI::dbAppendTable(con, DBI::SQL("my_db.mad_libs"), data.frame(
+    noun = noun,
+    noun2 = noun2,
+    verb = verb,
+    verb2 = verb2,
+    adjective = adjective,
+    adjective2 = adjective2,
+    adverb = adverb,
+    timestamp = Sys.time()
+  ))
+  invisible()
+}
 server <- function(input, output) {
   iv <- InputValidator$new()
   iv$add_rule("noun", sv_required())
@@ -46,6 +65,15 @@ server <- function(input, output) {
 
   story <- eventReactive(input$submit, {
     req(iv$is_valid())
+    try(add_row_to_db(
+      noun = input$noun,
+      noun2 = input$noun2,
+      verb = input$verb,
+      verb2 = input$verb2,
+      adjective = input$adjective,
+      adjective2 = input$adjective2,
+      adverb = input$adverb
+    ))
     generate_story(    
       noun = input$noun,
       noun2 = input$noun2,
@@ -56,7 +84,8 @@ server <- function(input, output) {
       adverb = input$adverb
     )
   })
-  
+
+ 
   output$story <- renderText({
     story()
   })
