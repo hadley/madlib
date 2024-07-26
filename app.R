@@ -36,10 +36,12 @@ generate_story <- function(adjective, verb, adverb, noun, adjective2, noun2, ver
 }
 
 add_row_to_db <- function(noun, noun2, verb, verb2, adjective, adjective2, adverb) {
+  cat("Connecting to database\n")
   con <- DBI::dbConnect(duckdb::duckdb())
   on.exit(DBI::dbDisconnect(con))
   
   DBI::dbExecute(con, "ATTACH 'md:'")
+  cat("Appending row\n")
   DBI::dbAppendTable(con, DBI::SQL("my_db.mad_libs"), data.frame(
     noun = noun,
     noun2 = noun2,
@@ -65,6 +67,7 @@ server <- function(input, output) {
 
   story <- eventReactive(input$submit, {
     req(iv$is_valid())
+    cat("Processing submit\n")
     try(add_row_to_db(
       noun = input$noun,
       noun2 = input$noun2,
@@ -84,7 +87,6 @@ server <- function(input, output) {
       adverb = input$adverb
     )
   })
-
  
   output$story <- renderText({
     story()
